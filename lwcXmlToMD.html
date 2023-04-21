@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LWC XML Configuration File Extractor</title>
+    <!-- Include Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
+
+    <!-- Include markdown-it that previews markdown -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/13.0.1/markdown-it.min.js" integrity="sha512-SYfDUYPg5xspsG6OOpXU366G8SZsdHOhqk/icdrYJ2E/WKZxPxze7d2HD3AyXpT7U22PZ5y74xRpqZ6A2bJ+kQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        .container {
+            margin-top: 2rem;
+        }
+
+        #mdPreview {
+            padding: 1rem;
+            background-color: #f3f3f3;
+            min-height: 8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Input  -->
+        <h4>LWC XML Configuration File Extractor</h4>
+        <!-- Show Bootstrap Alert --> 
+        <div class="alert alert-info" role="alert">
+            <div><strong>Quick Guide</strong></div>
+            <div>1. Copy and paste the content of .js-meta.xml file into the text area below.</div>
+            <div>2. Click on the <strong>Extract to Markdown</strong> button, Markdown Output and Preview should appear.</div>
+            <div>3. Copy the markdown output and paste it into the README.md file.</div>
+            <div>4. Enrich the README.md file with information not contained in XML Configuration File.</div>
+        </div>
+        <div class="form-group">
+            <h4>XML Configuration File</h4>
+            <textarea id="xmlInput" class="form-control" rows="10" placeholder="copy and paste xml from .js-meta.xml"><?xml version="1.0" encoding="UTF-8"?>
+                <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+                    <apiVersion>57.0</apiVersion>
+                    <isExposed>true</isExposed>
+                    <masterLabel>Record Detail View</masterLabel>
+                    <description>Display any data dynamically as a details section.</description>
+                    <targets>
+                        <target>lightningCommunity__Page</target>
+                        <target>lightningCommunity__Default</target>
+                        <target>lightning__RecordPage</target>
+                    </targets>
+                    <targetConfigs>
+                        <targetConfig targets="lightningCommunity__Default,lightning__RecordPage">
+                            <property 
+                                label="Record Id" 
+                                name="recordId" 
+                                type="String" 
+                                description="Id of the record object"/>
+                            <property 
+                                label="Object" 
+                                name="sObject" 
+                                type="String" 
+                                description="Object API" />
+                            <property 
+                                label="Layout Json Structure" 
+                                name="layoutJsonString" 
+                                type="String" 
+                                description="Record layout in JSON structure" />
+                        </targetConfig>
+                    </targetConfigs>
+                </LightningComponentBundle></textarea>
+        </div>
+        <br/>
+        <button class="btn btn-primary" onclick="extractXml()">Extract to Markdown</button>
+        <br/>
+        <br/>
+        <!-- Outputs -->
+        <div class="row">
+            <div class="col">
+              <h4>Markdown Output</h4>
+              <textarea id="mdOutput" class="form-control" rows="5"></textarea>
+            </div>
+            <div class="col">
+              <h4>Markdown Preview</h4>
+                <div id="mdPreview" class="output-container"></div>
+            </div>
+          </div>
+        
+    </div>
+    <!-- Include JavaScript for processing XML -->
+    <script>
+        function extractXml() {
+            const xmlString = document.getElementById('xmlInput').value;
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+
+            const masterLabel = xmlDoc.getElementsByTagName("masterLabel")[0].textContent;
+            const description = xmlDoc.getElementsByTagName("description")[0].textContent;
+            const targets = Array.from(xmlDoc.getElementsByTagName("target")).map(node => node.textContent);
+            const properties = xmlDoc.getElementsByTagName("property");
+
+            // merge information with md template
+            let mdStr = `# LWC myComponent
+
+## Label
+${masterLabel}
+
+## Description
+${description}
+
+## Details
+Explain further the functionalities delivered by the component.
+
+## UI
+![insert image]
+
+## Usage
+This component can be used in ${targets.join(', ')}.
+
+### Properties
+`;
+for(let prop of properties) {
+    mdStr += `- **\`${prop.getAttribute('label')} (${prop.getAttribute('name')})\`**: ${prop.getAttribute('description')}\n`;
+}
+mdStr += `
+### Example
+\`<c:myComponent prop1="String" prop2="String"/>\`
+
+## Dependencies
+Nil
+`;
+            // display markdown output
+            document.getElementById('mdOutput').value = mdStr;
+            document.getElementById('mdOutput').rows = mdStr.split('\n').length + 5;
+            document.getElementById('mdPreview').innerHTML = window.markdownit().render(mdStr);
+        }
+    </script>
+</body>
+</html>
