@@ -39,7 +39,6 @@
                     <apiVersion>57.0</apiVersion>
                     <isExposed>true</isExposed>
                     <masterLabel>Record Detail View</masterLabel>
-                    <description>Display any data dynamically as a details section.</description>
                     <targets>
                         <target>lightningCommunity__Page</target>
                         <target>lightningCommunity__Default</target>
@@ -85,44 +84,74 @@
     </div>
     <!-- Include JavaScript for processing XML -->
     <script>
+        const TARGET_MAP = {
+            'lightningCommunity__Page': 'Community Page',
+            'lightningCommunity__Default': 'Community Default',
+            
+            'lightning__AppPage': 'App Page',
+            'lightning__RecordPage': 'Record Page',
+            'lightning__HomePage': 'Home Page',
+            'lightning__FlowScreen': 'Flow Screen',
+            'lightning__UtilityBar': 'Utility Bar',
+            'lightning__RecordAction': 'Quick Action',
+        }
+
+        function getElementTextContent(xmlDoc, tagName) {
+            let element = xmlDoc.getElementsByTagName(tagName)[0];
+            return element ? element.textContent : ('Did not find ' + tagName + ' in XML file.');
+        }
+
+
         function extractXml() {
             const xmlString = document.getElementById('xmlInput').value;
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlString, "application/xml");
 
-            const masterLabel = xmlDoc.getElementsByTagName("masterLabel")[0].textContent;
-            const description = xmlDoc.getElementsByTagName("description")[0].textContent;
-            const targets = Array.from(xmlDoc.getElementsByTagName("target")).map(node => node.textContent);
+            const masterLabel = getElementTextContent(xmlDoc, "masterLabel");
+            const description = getElementTextContent(xmlDoc, "description");
+            // get targets
+            // then use TARGET_MAP to convert to human readable, in case not found in TARGET_MAP, use the original value
+            const targets = Array.from(xmlDoc.getElementsByTagName("target")).map(target => TARGET_MAP[target.textContent] || target.textContent);
             const properties = xmlDoc.getElementsByTagName("property");
 
             // merge information with md template
             let mdStr = `# LWC myComponent
 
 ## Label
+
 ${masterLabel}
 
 ## Description
+
 ${description}
 
 ## Details
+
 Explain further the functionalities delivered by the component.
 
 ## UI
+
 ![insert image]
 
 ## Usage
+
 This component can be used in ${targets.join(', ')}.
 
 ### Properties
+
 `;
 for(let prop of properties) {
     mdStr += `- **\`${prop.getAttribute('label')} (${prop.getAttribute('name')})\`**: ${prop.getAttribute('description')}\n`;
 }
 mdStr += `
 ### Example
-\`<c:myComponent prop1="String" prop2="String"/>\`
+
+\`\`\`html
+<c:myComponent prop1="String" prop2="String"/>
+\`\`\`
 
 ## Dependencies
+
 Nil
 `;
             // display markdown output
